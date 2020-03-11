@@ -130,7 +130,7 @@ def full_chain():
     return jsonify(response), 200
 
 
-@app.route('/lastblock', methods=['GET'])
+@app.route('/last_block', methods=['GET'])
 def last_block():
     response = {
         "last_block": blockchain.last_block

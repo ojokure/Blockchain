@@ -77,13 +77,13 @@ class Blockchain(object):
         in an effort to find a number that is a valid proof
         :return: A valid proof for the provided block
         """
-        block_string = json.dumps(block, sort_keys=True)
-        proof = 0
-        # loop while the return from a call to valid proof is False
-        while self.valid_proof(block_string, proof) is False:
-            proof += 1
+        # block_string = json.dumps(block, sort_keys=True)
+        # proof = 0
+        # # loop while the return from a call to valid proof is False
+        # while self.valid_proof(block_string, proof) is False:
+        #     proof += 1
+        # # return proof
         # return proof
-        return proof
 
     @staticmethod
     def valid_proof(block_string, proof):
@@ -112,15 +112,34 @@ app = Flask(__name__)
 node_identifier = str(uuid4()).replace('-', '')
 # Instantiate the Blockchain
 blockchain = Blockchain()
-@app.route('/mine', methods=['GET'])
+@app.route('/mine', methods=['POST'])
 def mine():
-    # Run the proof of work algorithm to get the next proof
-    proof = blockchain.proof_of_work(blockchain.last_block)
-    # Forge the new Block by adding it to the chain with the proof
-    previous_hash = blockchain.hash(blockchain.last_block)
-    block = blockchain.new_block(proof, previous_hash)
-    response = {"block": block}
-    return jsonify(response), 200
+
+    data = request.get_json()
+
+    if 'proof' and 'id 'in data:
+        proof = data['proof']
+        miner_id = data['id']
+
+        previous_hash = blockchain.hash(blockchain.last_block)
+
+        block = {
+            "id": miner_id,
+            "timestamp": time(),
+            "transactions": self.current_transactions,
+            "proof": proof,
+            "previous_hash": previous_hash or self.hash(self.chain[-1])
+        }
+        # Run the proof of work algorithm to get the next proof
+        # proof = blockchain.proof_of_work(blockchain.last_block)
+        # Forge the new Block by adding it to the chain with the proof
+        # previous_hash = blockchain.hash(blockchain.last_block)
+        # block = blockchain.new_block(proof, previous_hash)
+        response = {"block": block}
+        return jsonify(response), 200
+    else:
+        response = "No Proof or Id provided"
+        return jsonify(response), 400
 
 
 @app.route('/chain', methods=['GET'])
@@ -132,7 +151,7 @@ def full_chain():
     return jsonify(response), 200
 
 
-@app.route('/lastblock', methods=['GET'])
+@app.route('/last_block', methods=['GET'])
 def last_block():
     response = {
         "last_block": blockchain.last_block
