@@ -105,8 +105,6 @@ def mine():
 
     proof = data["proof"]
     miner_id = data["id"]
-    print(proof)
-    print(miner_id)
 
     last_block = blockchain.last_block
     last_block_string = json.dumps(last_block, sort_keys=True)
