@@ -1,5 +1,6 @@
 import hashlib
 import requests
+import time
 
 import sys
 import json
@@ -18,8 +19,12 @@ def proof_of_work(block):
     block_string = json.dumps(block, sort_keys=True)
     proof = 0
 
+    print("mining..........")
+
     while valid_proof(block_string, proof) is False:
         proof += 1
+
+    print("validating proof....")
 
     return proof
 
@@ -51,12 +56,15 @@ if __name__ == '__main__':
 
     # Load ID
     f = open("my_id.txt", "r")
-    id = f.read()
-    print("ID is", id)
+    miner_id = f.read()
+    print("ID is", miner_id)
     f.close()
+
+    mined_coined = 0
 
     # Run forever until interrupted
     while True:
+        print("looking for proof")
         r = requests.get(url=node + "/last_block")
         # Handle non-json response
         try:
@@ -68,15 +76,46 @@ if __name__ == '__main__':
             break
 
         # TODO: Get the block from `data` and use it to look for a new proof
-        new_proof = proof_of_work(data.last_block)
+
+        start_time = time.time()
+
+        last_block = data["last_block"]
+
+        new_proof = proof_of_work(last_block)
+        print(f"proof found: {new_proof}")
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
-        post_data = {"proof": new_proof, "id": id}
+        post_data = {"proof": new_proof, "id": miner_id}
 
         r = requests.post(url=node + "/mine", json=post_data)
-        data = r.json()
+        print(r)
+
+        try:
+            data = r.json()
+            print(data)
+
+        except ValueError:
+            print("Error:  Non-json response")
+            print("Response returned:")
+            print(r)
+            break
+
+        finish_time = time.time()
 
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        pass
+
+        if data["message"] == "New Block Forged":
+
+            mined_coined += 1
+            print(f"minded coin : {mined_coined}")
+
+            timer = finish_time - start_time
+
+            print(f"mined in {timer} sec")
+
+        else:
+            print(data["message"])
+
+    print(f"mined in {timer}")
